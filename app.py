@@ -1,9 +1,10 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 import pdfplumber
 import os
 import re
 from datetime import datetime
 import uvicorn
+import requests
 
 app = FastAPI()
 
@@ -123,14 +124,30 @@ def extract_skills(text:str, keywords:list) -> list:
             skills_found.append(keyword)
     return skills_found
 
+def download_file_from_url(url: str, temp_file_path: str):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(temp_file_path, "wb") as f:
+            f.write(response.content)
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=400, detail=f"Error descargando archivo: {e}")
+
 @app.post("/information-cv")
 
-async def proccess_information_cv(file: UploadFile = File(...)):
-    temp_file_path = f"./temp_{file.filename}"
-
+async def proccess_information_cv(
+    file: UploadFile = File(None),
+    url: str = Query(None)    
+):
+    if not file and not url:
+        raise HTTPException(status_code=400, detail="Se requiere una url")
+    temp_file_path = "./temp_cv.pdf"
     try:
-        with open(temp_file_path, "wb") as f:
-             f.write(await file.read())
+        if url:
+            download_file_from_url(url, temp_file_path)
+        else:
+            with open(temp_file_path, "wb") as f:
+                f.write(await file.read())
             
         with pdfplumber.open(temp_file_path) as pdf:
             text = "".join([page.extract_text() for page in pdf.pages ])
