@@ -135,19 +135,12 @@ def download_file_from_url(url: str, temp_file_path: str):
 
 @app.post("/information-cv")
 
-async def proccess_information_cv(
-    file: UploadFile = File(None),
-    url: str = Query(None)    
-):
-    if not file and not url:
-        raise HTTPException(status_code=400, detail="Se requiere una url")
+async def proccess_information_cv(url: str = Query(...,description="URL del archivo PDF")):
     temp_file_path = "./temp_cv.pdf"
     try:
-        if url:
-            download_file_from_url(url, temp_file_path)
-        else:
-            with open(temp_file_path, "wb") as f:
-                f.write(await file.read())
+        
+        download_file_from_url(url, temp_file_path)
+
             
         with pdfplumber.open(temp_file_path) as pdf:
             text = "".join([page.extract_text() for page in pdf.pages ])
