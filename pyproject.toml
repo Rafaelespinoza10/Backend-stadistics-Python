@@ -15,6 +15,7 @@ fastapi-utils = "^0.8.0"
 aiofiles = "^24.1.0"
 uvicorn = {extras = ["gunicorn"], version = "^0.32.1"}
 pdfplumber = "^0.11.4"
+python-multipart = "^0.0.19"
 
 
 
